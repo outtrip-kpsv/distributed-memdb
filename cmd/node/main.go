@@ -1,12 +1,11 @@
 package main
 
 import (
-	"fmt"
 	cfg "team01/internal/config"
 )
 
 func main() {
-
-	settings := cfg.Get()
-	fmt.Println(settings.GetAddress())
+	cfg.SetAppName("Node")
+	cfg.GetLogger().Info("start " + cfg.GetAddress())
+	//fmt.Println(cfg.GetAddress())
 }

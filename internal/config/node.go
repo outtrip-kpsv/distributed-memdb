@@ -21,6 +21,7 @@ type OptionsSrv struct {
 var globalConf = ConfSrv{}
 
 type ConfSrv struct {
+	AppName string
 	Options OptionsSrv
 	Logger  *zap.Logger
 }
@@ -42,12 +43,16 @@ func init() {
 	globalConf.Logger = logger
 }
 
-func Get() ConfSrv {
-	return globalConf
+func SetAppName(name string) {
+	globalConf.AppName = name
 }
 
-func (c *ConfSrv) GetAddress() string {
-	return fmt.Sprintf("%s:%s", c.Options.Host, c.Options.Port)
+func GetLogger() *zap.Logger {
+	return globalConf.Logger
+}
+
+func GetAddress() string {
+	return fmt.Sprintf("%s:%s", globalConf.Options.Host, globalConf.Options.Port)
 }
 
 func (c *ConfSrv) GetConnectAddress() (string, error) {

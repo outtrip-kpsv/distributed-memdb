@@ -12,7 +12,7 @@ message google {
 }
 
 message DataNode {
-  google.protobuf.Timestamp timestamp = 1;
+  google.protobuf.Timestamp ts = 1;
 }
 
 message KnownNodes {
