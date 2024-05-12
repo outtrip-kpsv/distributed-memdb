@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/frankenbeanies/uuid4 v0.0.0-20180313125435-68b799ec299a // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
