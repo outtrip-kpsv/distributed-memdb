@@ -1,25 +1,25 @@
 package db
 
 import (
-  "team01/internal/node/db/mem"
-  "team01/internal/proto/node"
+	"team01/internal/node/db/mem"
+	"team01/internal/proto/node"
 )
 
 type DBRepo struct {
-  Data  IData
-  Vault IVault
+	Vault IVault
 }
 
 type IVault interface {
-  GetArtifact(uuid string) *node.Artefact
-}
-
-type IData interface {
+	GetArtifact(uuid string) *node.Artefact
 }
 
 func NewDBRepo() *DBRepo {
-  return &DBRepo{
-    Data:  mem.NewData(),
-    Vault: mem.NewVault(),
-  }
+	return &DBRepo{
+		Vault: mem.NewVault(),
+	}
+}
+
+func (D DBRepo) GetArtifact(uuid string) *node.Artefact {
+	//TODO implement me
+	panic("implement me")
 }

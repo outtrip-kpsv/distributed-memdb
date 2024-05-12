@@ -55,9 +55,9 @@ func GetAddress() string {
 	return fmt.Sprintf("%s:%s", globalConf.Options.Host, globalConf.Options.Port)
 }
 
-func (c *ConfSrv) GetConnectAddress() (string, error) {
-	if len(c.Options.ConnectHost) == 0 || len(c.Options.ConnectPort) == 0 {
+func GetConnectAddress() (string, error) {
+	if len(globalConf.Options.ConnectHost) == 0 || len(globalConf.Options.ConnectPort) == 0 {
 		return "", errors.New("not connect")
 	}
-	return fmt.Sprintf("%s:%s", c.Options.ConnectHost, c.Options.ConnectPort), nil
+	return fmt.Sprintf("%s:%s", globalConf.Options.ConnectHost, globalConf.Options.ConnectPort), nil
 }
