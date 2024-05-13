@@ -34,7 +34,7 @@ func (m *midelwares) ClientRequestInterceptor(
 	// посе запроса
 	if resultErr == nil && method != "/NodeCommunication/GetKnownNodes" {
 		res := &node.KnownNodes{}
-		err := cc.Invoke(ctx, "/NodeCommunication/GetKnownNodes", m.bl.Node.GetUnit().CreateReqKnownNodes(), res, opts...)
+		err := cc.Invoke(ctx, "/NodeCommunication/GetKnownNodes", m.bl.Node.GetKnowNode(), res, opts...)
 		if err != nil {
 			cfg.GetLogger().Info("ERR", zap.Error(err))
 			return err
@@ -45,7 +45,7 @@ func (m *midelwares) ClientRequestInterceptor(
 		oldTime := time.Now()
 		for k, v := range res.Nodes {
 			//TODO Address ->cfg
-			if k == m.bl.Node.GetUnit().Address {
+			if k == cfg.GetAddress() {
 				continue
 			}
 			err := m.bl.Node.GetUnit().ConnectTo(k, v.Ts)

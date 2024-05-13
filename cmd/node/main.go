@@ -1,20 +1,25 @@
 package main
 
 import (
+	"fmt"
 	cfg "team01/internal/config"
 	"team01/internal/node/bl"
 	"team01/internal/node/db"
+	"team01/internal/node/io/grpc"
 )
 
 func main() {
 	cfg.SetAppName("Node")
-	cfg.GetLogger().Info("start " + cfg.GetAddress())
 
 	dbRepo := db.NewDBRepo()
 	dbRepo.Vault.GetArtifact("w")
 
 	blRepo := bl.NewBL(dbRepo)
-
-	//fmt.Println(cfg.GetAddress())
+	finished := make(chan bool)
+	srv := grpc.NewGrpcNode(blRepo, finished)
+	srv.Run()
+	fmt.Println("------")
+	srv.
+	<-finished
 
 }
