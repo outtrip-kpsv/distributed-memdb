@@ -48,13 +48,13 @@ func (m *midelwares) ClientRequestInterceptor(
 			if k == m.bl.Node.GetUnit().Address {
 				continue
 			}
-			err := m.bl.Node.GetUnit().ConnectTo(k, v.Timestamp)
+			err := m.bl.Node.GetUnit().ConnectTo(k, v.Ts)
 			if err != nil {
 				return err
 			}
 			cfg.GetLogger().Info("find time for last node check " + k)
-			if v.Timestamp.AsTime().Before(oldTime) {
-				oldTime = v.Timestamp.AsTime()
+			if v.Ts.AsTime().Before(oldTime) {
+				oldTime = v.Ts.AsTime()
 				m.bl.Node.GetUnit().LastNode.Address = k
 				cfg.GetLogger().Info("last node naw is " + k)
 			} else {

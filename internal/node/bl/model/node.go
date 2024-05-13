@@ -70,10 +70,10 @@ func (u *Unit) ConnectTo(srv string, timeSt *timestamppb.Timestamp) error {
 
 		cfg.GetLogger().Info("OK", zap.String("Connect to", srv))
 	} else {
-		stateTime := u.KnowNodes[srv].Public.Timestamp.AsTime()
+		stateTime := u.KnowNodes[srv].Public.Ts.AsTime()
 		newGetTime := timeSt.AsTime()
 		if stateTime.Before(newGetTime) {
-			u.KnowNodes[srv].Public.Timestamp = timeSt
+			u.KnowNodes[srv].Public.Ts = timeSt
 			cfg.GetLogger().Info("time upd", zap.String("node", srv), zap.Reflect("time", timeSt))
 		}
 	}
@@ -127,11 +127,11 @@ func getClient(
 func (u *Unit) CreateReqKnownNodes() *node.KnownNodes {
 	knownNodesMap := make(map[string]*node.DataNode)
 	for k, v := range u.KnowNodes {
-		knownNodesMap[k] = &node.DataNode{Timestamp: v.Public.Timestamp}
+		knownNodesMap[k] = &node.DataNode{Ts: v.Public.Ts}
 	}
 	// добавление скоего адресса в мапу
 	knownNodesMap[u.Address] = &node.DataNode{
-		Timestamp: timestamppb.Now(),
+		Ts: timestamppb.Now(),
 	}
 	knownNodesMessage := &node.KnownNodes{
 		Nodes: knownNodesMap,
