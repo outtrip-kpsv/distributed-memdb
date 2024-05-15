@@ -19,7 +19,6 @@ func main() {
 	srv := grpc.NewGrpcNode(blRepo, finished)
 	srv.Run()
 	fmt.Println("------")
-	srv.
 	<-finished
 
 }

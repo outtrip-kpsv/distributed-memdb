@@ -2,12 +2,12 @@ package routes
 
 import (
 	"team01/internal/node/bl"
-	"team01/internal/node/io/grpc/midleware"
+	"team01/internal/node/io/grpc/middleware"
 )
 
 type router struct {
 	bl          *bl.BL
-	middlewares midleware.IMiddleWare
+	middlewares middleware.IMiddleWare
 }
 
 func InitNodeRoutes(bl *bl.BL) {

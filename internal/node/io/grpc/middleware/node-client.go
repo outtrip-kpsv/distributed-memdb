@@ -1,4 +1,4 @@
-package midleware
+package middleware
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 //todo все гетноде переписать
 
 // ClientRequestInterceptor клентский мидлваре выполняемый перед запросом
-func (m *midelwares) ClientRequestInterceptor(
+func (m *middleware) ClientRequestInterceptor(
 	ctx context.Context,
 	method string,
 	req interface{},
@@ -31,7 +31,7 @@ func (m *midelwares) ClientRequestInterceptor(
 	}
 
 	resultErr := invoker(ctx, method, req, reply, cc, opts...)
-	// посе запроса
+	// после запроса
 	if resultErr == nil && method != "/NodeCommunication/GetKnownNodes" {
 		res := &node.KnownNodes{}
 		err := cc.Invoke(ctx, "/NodeCommunication/GetKnownNodes", m.bl.Node.GetKnowNode(), res, opts...)

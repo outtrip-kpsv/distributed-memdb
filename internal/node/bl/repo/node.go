@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"team01/internal/node/bl/model"
 	"team01/internal/node/db"
 	"team01/internal/proto/node"
@@ -10,10 +11,32 @@ import (
 type INodeBL interface {
 	GetUnit() *model.Unit //TODO remove
 	GetKnowNode() *node.KnownNodes
+	AddNodeToKnown(address string, client node.NodeCommunicationClient)
+	NodeIsKnown(address string) bool
 }
 
 type nodeBl struct {
 	core *model.Unit
+}
+
+func (n nodeBl) AddNodeToKnown(address string, client node.NodeCommunicationClient) {
+	//var st = model.State{
+	//	Public:     node.DataNode{},
+	//}
+	n.core.KnowNodes[address] = &model.State{
+		Public: node.DataNode{Ts: timestamppb.Now()},
+		Client: client,
+	}
+	//n.core.KnowNodes[address].Public.Ts = timestamppb.Now()
+	//n.core.KnowNodes[address].Client = client
+
+}
+
+func (n nodeBl) NodeIsKnown(address string) bool {
+	if _, ok := n.core.KnowNodes[address]; !ok {
+		return false
+	}
+	return true
 }
 
 func (n nodeBl) GetKnowNode() *node.KnownNodes {
