@@ -6,14 +6,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	cfg "team01/internal/config"
 	"time"
 )
-
-func TimeUpd() timestamppb.Timestamp {
-
-}
 
 // GetClient для получения соединения с сервером gRPC
 func GetClient(
@@ -29,6 +24,8 @@ func GetClient(
 		...grpc.CallOption) error) (*grpc.ClientConn, error) {
 
 	ticker := time.NewTicker(time.Millisecond)
+	//timeout := time.After(5 * time.Second)
+
 	defer ticker.Stop()
 
 	nSeconds := 1

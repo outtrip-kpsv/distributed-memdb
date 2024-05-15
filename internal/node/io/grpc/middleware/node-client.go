@@ -27,6 +27,7 @@ func (m *middleware) ClientRequestInterceptor(
 	if cc.GetState() != connectivity.Ready {
 		delete(m.bl.Node.GetUnit().KnowNodes, cc.Target())
 		cfg.GetLogger().Info("Нет соединение с нодой", zap.String("address", cc.Target()))
+		m.bl.Node.UpdLastNode()
 		return errors.New("Server connection is not ready")
 	}
 
@@ -40,36 +41,40 @@ func (m *middleware) ClientRequestInterceptor(
 			return err
 		}
 		cfg.GetLogger().Info("GetNodes: ", zap.Reflect("nodes: ", res))
-
-		// todo найти самый стары запрос и обновить LastNode (+)
-		oldTime := time.Now()
 		for k, v := range res.Nodes {
-			//TODO Address ->cfg
-			if k == cfg.GetAddress() {
-				continue
-			}
-			err := m.bl.Node.GetUnit().ConnectTo(k, v.Ts)
-			if err != nil {
-				return err
-			}
-			cfg.GetLogger().Info("find time for last node check " + k)
-			if v.Ts.AsTime().Before(oldTime) {
-				oldTime = v.Ts.AsTime()
-				m.bl.Node.GetUnit().LastNode.Address = k
-				cfg.GetLogger().Info("last node naw is " + k)
-			} else {
-				cfg.GetLogger().Info("ln old " + m.bl.Node.GetUnit().LastNode.Address)
-				//fmt.Println()
-			}
+			t := time.Now().Sub(v.Ts.AsTime()).String()
+			cfg.GetLogger().Info("==== node: ", zap.String("nodes: ", k), zap.String("tm", t))
+
 		}
-		m.bl.Node.GetUnit().LastNode.Ticker.Stop()
-		tmp := time.Second*5 - (time.Now().Sub(oldTime))
-		cfg.GetLogger().Info("-------- " + tmp.String())
-		//fmt.Println("t", tmp)
-		if tmp <= 0 {
-			tmp = time.Millisecond
-		}
-		m.bl.Node.GetUnit().LastNode.Ticker = time.NewTicker(tmp)
+		//// todo найти самый стары запрос и обновить LastNode (+) ????? где это делать
+		//oldTime := time.Now()
+		//for k, v := range res.Nodes {
+		//	//TODO Address ->cfg
+		//	if k == cfg.GetAddress() {
+		//		continue
+		//	}
+		//	err := m.bl.Node.GetUnit().ConnectTo(k, v.Ts)
+		//	if err != nil {
+		//		return err
+		//	}
+		//	cfg.GetLogger().Info("find time for last node check " + k)
+		//	if v.Ts.AsTime().Before(oldTime) {
+		//		oldTime = v.Ts.AsTime()
+		//		m.bl.Node.GetUnit().LastNode.Address = k
+		//		cfg.GetLogger().Info("last node naw is " + k)
+		//	} else {
+		//		cfg.GetLogger().Info("ln old " + m.bl.Node.GetUnit().LastNode.Address)
+		//		//fmt.Println()
+		//	}
+		//}
+		//m.bl.Node.GetUnit().LastNode.Ticker.Stop()
+		//tmp := time.Second*5 - (time.Now().Sub(oldTime))
+		//cfg.GetLogger().Info("-------- " + tmp.String())
+		////fmt.Println("t", tmp)
+		//if tmp <= 0 {
+		//	tmp = time.Millisecond
+		//}
+		//m.bl.Node.GetUnit().LastNode.Ticker = time.NewTicker(tmp)
 
 	}
 

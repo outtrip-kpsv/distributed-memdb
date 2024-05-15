@@ -2,16 +2,13 @@ package grpc
 
 import (
 	"context"
-	"errors"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
-	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	cfg "team01/internal/config"
 	"team01/internal/node/bl"
-	"team01/internal/node/io/grpc/middleware"
 	"team01/internal/node/io/grpc/node-rpc"
+	"team01/internal/node/io/grpc/util"
 	"team01/internal/proto/node"
 	"time"
 )
@@ -30,7 +27,7 @@ func NewGrpcNode(bl *bl.BL, fin chan bool) *serv {
 }
 
 func (s *serv) run() error {
-	server := grpc.NewServer(grpc.UnaryInterceptor(middleware.ServerRequestInterceptor))
+	server := grpc.NewServer(grpc.UnaryInterceptor(s.nodeRpc.Midleware.ServerRequestInterceptor))
 	node.RegisterNodeCommunicationServer(server, s.nodeRpc)
 
 	lis, err := net.Listen("tcp", cfg.GetAddress())
@@ -52,6 +49,60 @@ func (s *serv) Run() {
 		s.finished <- true
 	}()
 	cfg.GetLogger().Info("start node", zap.String("address", cfg.GetAddress()))
+	address, err := cfg.GetConnectAddress()
+	if err == nil {
+		err = s.ConnectTo(address)
+	}
+	go func() {
+		for {
+			select {
+			case <-s.nodeRpc.BL.Node.GetUnit().LastNode.Ticker.C:
+				cfg.GetLogger().Info("ticker done for " + s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
+				pingReq, err := s.nodeRpc.BL.Node.GetUnit().KnowNodes[s.nodeRpc.BL.Node.GetUnit().LastNode.Address].Client.Ping(context.Background(), &node.PingRequest{})
+
+				if err != nil {
+					delete(s.nodeRpc.BL.Node.GetUnit().KnowNodes, s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
+
+					//s.nodeRpc.BL.Node.UpdLastNode()
+					//cfg.GetLogger().Info("error", zap.Error(err))
+					//delete(s.nodeRpc.BL.Node.GetUnit().KnowNodes, s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
+					//// todo обновить ласт ноду
+					//oldTime := time.Now()
+					//for k, v := range s.nodeRpc.BL.Node.GetUnit().KnowNodes {
+					//
+					//	cfg.GetLogger().Info("find time for last node check " + k)
+					//	if v.Public.Ts.AsTime().Before(oldTime) {
+					//		oldTime = v.Public.Ts.AsTime()
+					//		s.nodeRpc.BL.Node.GetUnit().LastNode.Address = k
+					//		cfg.GetLogger().Info("last node naw is " + k)
+					//	} else {
+					//		cfg.GetLogger().Info("ln old " + s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
+					//		//fmt.Println()
+					//	}
+					//}
+					//s.nodeRpc.BL.Node.GetUnit().LastNode.Ticker.Stop()
+					//tmp := time.Second*5 - (time.Now().Sub(oldTime))
+					//cfg.GetLogger().Info("-------- " + tmp.String())
+					////fmt.Println("t", tmp)
+					//if tmp <= 0 {
+					//	tmp = time.Millisecond
+					//}
+					//s.nodeRpc.BL.Node.GetUnit().LastNode.Ticker = time.NewTicker(tmp)
+					continue
+				} else {
+
+				}
+
+				if pingReq.Res == false {
+					delete(s.nodeRpc.BL.Node.GetUnit().KnowNodes, s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
+				}
+
+			default:
+				continue
+
+			}
+		}
+	}()
 }
 
 // TODO work1!! this!!!
@@ -61,79 +112,24 @@ func (s *serv) ConnectTo(address string) error {
 	}
 
 	if ok := s.nodeRpc.BL.Node.NodeIsKnown(address); !ok {
-		//TODO named logger
-		conn, err := getClient(address, s.nodeRpc.Midleware.ClientRequestInterceptor)
+		//TODO named logger, remove ctx background
+		conn, err := util.GetClient(context.Background(), address, s.nodeRpc.Midleware.ClientRequestInterceptor)
 		if err != nil {
 			return err
 		}
-
 		s.nodeRpc.BL.Node.AddNodeToKnown(address, node.NewNodeCommunicationClient(conn))
-
-		//var st = State{
-		//	Public:     node.DataNode{},
-		//	Connection: conn,
-		//}
-		//
-		//u.KnowNodes[address] = &st
-		//u.KnowNodes[address].Public.Ts = timestamppb.Now()
-		//u.KnowNodes[address].Client = node.NewNodeCommunicationClient(conn)
-
 		cfg.GetLogger().Info("OK", zap.String("Connect to", address))
 
 	} else {
 
-		//stateTime := u.KnowNodes[srv].Public.Ts.AsTime()
-		//newGetTime := timestamppb.Now()
-		//if stateTime.Before(newGetTime) {
-		//	u.KnowNodes[srv].Public.Ts = timeSt
-		//	cfg.GetLogger().Info("time upd", zap.String("node", srv), zap.Reflect("time", timeSt))
-		//}
 	}
 
-	if len(u.KnowNodes) == 1 {
-		u.LastNode.Address = srv
-		u.LastNode.Ticker = time.NewTicker(time.Second * 5)
+	if len(s.nodeRpc.BL.Node.GetUnit().KnowNodes) == 1 {
+		//todo getunit remove
+		s.nodeRpc.BL.Node.GetUnit().LastNode.Address = address
+		s.nodeRpc.BL.Node.GetUnit().LastNode.Ticker = time.NewTicker(time.Second * 5)
+		cfg.GetLogger().Info("last node cr")
 	}
 
 	return nil
-}
-
-func getClient(
-	srv string,
-	interceptor func(
-		context.Context,
-		string,
-		interface{},
-		interface{},
-		*grpc.ClientConn,
-		grpc.UnaryInvoker,
-		...grpc.CallOption) error) (*grpc.ClientConn, error) {
-
-	ticker := time.NewTicker(time.Millisecond)
-	timeout := time.After(5 * time.Second)
-	nSeconds := 1
-
-	conn, _ := grpc.Dial(
-		srv,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(interceptor),
-	)
-
-	for {
-		select {
-		case <-ticker.C:
-			ticker.Stop()
-			if conn.GetState() != connectivity.Ready {
-
-				cfg.GetLogger().Info("Нет соединение с нодой:", zap.String("node", srv), zap.Duration("проверка подключения через", time.Duration(nSeconds)*time.Millisecond))
-				tmp := time.Duration(nSeconds) * time.Millisecond
-				ticker = time.NewTicker(tmp)
-				nSeconds *= 2
-				continue
-			}
-			return conn, nil
-		case <-timeout:
-			return nil, errors.New("node: connection timeout")
-		}
-	}
 }

@@ -16,6 +16,13 @@ type IMiddleWare interface {
 		invoker grpc.UnaryInvoker,
 		opts ...grpc.CallOption,
 	) error
+
+	ServerRequestInterceptor(
+		ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (response interface{}, err error)
 }
 
 type middleware struct {

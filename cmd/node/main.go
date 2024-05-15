@@ -8,6 +8,7 @@ import (
 	"team01/internal/node/io/grpc"
 )
 
+// TODO add gracefully shutdown
 func main() {
 	cfg.SetAppName("Node")
 

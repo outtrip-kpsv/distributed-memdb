@@ -1,7 +1,9 @@
 package repo
 
 import (
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	cfg "team01/internal/config"
 	"team01/internal/node/bl/model"
 	"team01/internal/node/db"
 	"team01/internal/proto/node"
@@ -13,13 +15,15 @@ type INodeBL interface {
 	GetKnowNode() *node.KnownNodes
 	AddNodeToKnown(address string, client node.NodeCommunicationClient)
 	NodeIsKnown(address string) bool
+	UpdTimePingNode(address string, ts *timestamppb.Timestamp)
+	UpdLastNode()
 }
 
 type nodeBl struct {
 	core *model.Unit
 }
 
-func (n nodeBl) AddNodeToKnown(address string, client node.NodeCommunicationClient) {
+func (n *nodeBl) AddNodeToKnown(address string, client node.NodeCommunicationClient) {
 	//var st = model.State{
 	//	Public:     node.DataNode{},
 	//}
@@ -32,19 +36,56 @@ func (n nodeBl) AddNodeToKnown(address string, client node.NodeCommunicationClie
 
 }
 
-func (n nodeBl) NodeIsKnown(address string) bool {
+func (n *nodeBl) NodeIsKnown(address string) bool {
 	if _, ok := n.core.KnowNodes[address]; !ok {
 		return false
 	}
 	return true
 }
 
-func (n nodeBl) GetKnowNode() *node.KnownNodes {
+func (n *nodeBl) GetKnowNode() *node.KnownNodes {
 	return createReqKnownNodes(n.core.KnowNodes)
 }
 
-func (n nodeBl) GetUnit() *model.Unit {
+func (n *nodeBl) GetUnit() *model.Unit {
 	return n.core
+}
+
+func (n *nodeBl) UpdTimePingNode(address string, ts *timestamppb.Timestamp) {
+	//if ts == nil {
+	//	ts = timestamppb.Now()
+	//}
+
+	cfg.GetLogger().Info("ss", zap.Reflect("--- ", n.core))
+	stateTime := n.core.KnowNodes[address].Public.Ts.AsTime()
+	if stateTime.Before(ts.AsTime()) {
+		n.core.KnowNodes[address].Public.Ts = ts
+		//cfg.GetLogger().Info("time upd", zap.String("node", address), zap.Reflect("time", ts.AsTime()))
+	}
+}
+
+func (n *nodeBl) UpdLastNode() {
+	oldTime := time.Now()
+	for k, v := range n.core.KnowNodes {
+
+		cfg.GetLogger().Info("find time for last node check " + k)
+		if v.Public.Ts.AsTime().Before(oldTime) {
+			oldTime = v.Public.Ts.AsTime()
+			n.core.LastNode.Address = k
+			//cfg.GetLogger().Info("last node naw is " + k)
+		} else {
+			//cfg.GetLogger().Info("ln old " + n.core.LastNode.Address)
+			//fmt.Println()
+		}
+	}
+	n.core.LastNode.Ticker.Stop()
+	tmp := time.Second*5 - (time.Now().Sub(oldTime))
+	//cfg.GetLogger().Info("-------- " + tmp.String())
+	//fmt.Println("t", tmp)
+	if tmp <= 0 {
+		tmp = time.Millisecond
+	}
+	n.core.LastNode.Ticker = time.NewTicker(tmp)
 }
 
 func NewNodeBL(dbRepo *db.DBRepo) INodeBL {
@@ -70,9 +111,9 @@ func createReqKnownNodes(nodes map[string]*model.State) *node.KnownNodes {
 		knownNodesMap[k] = &node.DataNode{Ts: v.Public.Ts}
 	}
 	// добавление скоего адресса в мапу
-	//knownNodesMap[u.Address] = &node.DataNode{
-	//	Timestamp: timestamppb.Now(),
-	//}
+	knownNodesMap[cfg.GetAddress()] = &node.DataNode{
+		Ts: timestamppb.Now(),
+	}
 
 	return &node.KnownNodes{
 		Nodes: knownNodesMap,

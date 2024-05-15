@@ -1,13 +1,6 @@
 package model
 
 import (
-	"context"
-	"errors"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"team01/internal/node/db/mem"
 	"team01/internal/proto/node"
 	"time"
@@ -43,81 +36,44 @@ type State struct {
 //	return handler(ctx, req)
 //}
 
-func (u *Unit) ConnectTo(srv string, timeSt *timestamppb.Timestamp) error {
-	//if cfg.GetAddress() == srv {
-	//	return nil
-	//}
-	//if _, ok := u.KnowNodes[srv]; !ok {
-	//	//TODO named logger
-	//	conn, err := getClient(srv, u.ClientRequestInterceptor, cfg.GetLogger().Named("rrr"))
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	var st = State{
-	//		Public:     node.DataNode{},
-	//		Connection: conn,
-	//	}
-	//	u.KnowNodes[srv] = &st
-	//
-	//	u.KnowNodes[srv].Public.Ts = timestamppb.Now()
-	//	u.KnowNodes[srv].Connection = conn
-	//	u.KnowNodes[srv].Client = node.NewNodeCommunicationClient(conn)
-	//
-	//	cfg.GetLogger().Info("OK", zap.String("Connect to", srv))
-	//} else {
-	//	stateTime := u.KnowNodes[srv].Public.Ts.AsTime()
-	//	newGetTime := timeSt.AsTime()
-	//	if stateTime.Before(newGetTime) {
-	//		u.KnowNodes[srv].Public.Ts = timeSt
-	//		cfg.GetLogger().Info("time upd", zap.String("node", srv), zap.Reflect("time", timeSt))
-	//	}
-	//}
-	//if len(u.KnowNodes) == 1 {
-	//	u.LastNode.Address = srv
-	//	u.LastNode.Ticker = time.NewTicker(time.Second * 5)
-	//}
-	return nil
-}
-
-func getClient(
-	srv string,
-	interceptor func(
-		context.Context,
-		string,
-		interface{},
-		interface{},
-		*grpc.ClientConn,
-		grpc.UnaryInvoker,
-		...grpc.CallOption) error, logger *zap.Logger) (*grpc.ClientConn, error) {
-
-	ticker := time.NewTicker(time.Millisecond)
-	timeout := time.After(5 * time.Second)
-	nSeconds := 1
-	conn, _ := grpc.Dial(
-		srv,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(interceptor),
-	)
-	for {
-		select {
-		case <-ticker.C:
-			ticker.Stop()
-			if conn.GetState() != connectivity.Ready {
-
-				logger.Info("Нет соединение с нодой:", zap.String("node", srv), zap.Duration("проверка подключения через", time.Duration(nSeconds)*time.Millisecond))
-				tmp := time.Duration(nSeconds) * time.Millisecond
-				//fmt.Println(tmp)
-				ticker = time.NewTicker(tmp)
-				nSeconds *= 2
-				continue
-			}
-			return conn, nil
-		case <-timeout:
-			return nil, errors.New("node: connection timeout")
-		}
-	}
-}
+//func getClient(
+//	srv string,
+//	interceptor func(
+//		context.Context,
+//		string,
+//		interface{},
+//		interface{},
+//		*grpc.ClientConn,
+//		grpc.UnaryInvoker,
+//		...grpc.CallOption) error, logger *zap.Logger) (*grpc.ClientConn, error) {
+//
+//	ticker := time.NewTicker(time.Millisecond)
+//	timeout := time.After(5 * time.Second)
+//	nSeconds := 1
+//	conn, _ := grpc.Dial(
+//		srv,
+//		grpc.WithTransportCredentials(insecure.NewCredentials()),
+//		grpc.WithUnaryInterceptor(interceptor),
+//	)
+//	for {
+//		select {
+//		case <-ticker.C:
+//			ticker.Stop()
+//			if conn.GetState() != connectivity.Ready {
+//
+//				logger.Info("Нет соединение с нодой:", zap.String("node", srv), zap.Duration("проверка подключения через", time.Duration(nSeconds)*time.Millisecond))
+//				tmp := time.Duration(nSeconds) * time.Millisecond
+//				//fmt.Println(tmp)
+//				ticker = time.NewTicker(tmp)
+//				nSeconds *= 2
+//				continue
+//			}
+//			return conn, nil
+//		case <-timeout:
+//			return nil, errors.New("node: connection timeout")
+//		}
+//	}
+//}
 
 //// CreateReqKnownNodes Функция для формирования knownNodes
 //func (u *Unit) CreateReqKnownNodes() *node.KnownNodes {
