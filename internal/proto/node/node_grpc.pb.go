@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	NodeCommunication_Ping_FullMethodName          = "/NodeCommunication/Ping"
 	NodeCommunication_GetKnownNodes_FullMethodName = "/NodeCommunication/GetKnownNodes"
+	NodeCommunication_Close_FullMethodName         = "/NodeCommunication/Close"
 )
 
 // NodeCommunicationClient is the client API for NodeCommunication service.
@@ -29,6 +30,7 @@ const (
 type NodeCommunicationClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResult, error)
 	GetKnownNodes(ctx context.Context, in *KnownNodes, opts ...grpc.CallOption) (*KnownNodes, error)
+	Close(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingRequest, error)
 }
 
 type nodeCommunicationClient struct {
@@ -57,12 +59,22 @@ func (c *nodeCommunicationClient) GetKnownNodes(ctx context.Context, in *KnownNo
 	return out, nil
 }
 
+func (c *nodeCommunicationClient) Close(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingRequest, error) {
+	out := new(PingRequest)
+	err := c.cc.Invoke(ctx, NodeCommunication_Close_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeCommunicationServer is the server API for NodeCommunication service.
 // All implementations must embed UnimplementedNodeCommunicationServer
 // for forward compatibility
 type NodeCommunicationServer interface {
 	Ping(context.Context, *PingRequest) (*PingResult, error)
 	GetKnownNodes(context.Context, *KnownNodes) (*KnownNodes, error)
+	Close(context.Context, *PingRequest) (*PingRequest, error)
 	mustEmbedUnimplementedNodeCommunicationServer()
 }
 
@@ -75,6 +87,9 @@ func (UnimplementedNodeCommunicationServer) Ping(context.Context, *PingRequest) 
 }
 func (UnimplementedNodeCommunicationServer) GetKnownNodes(context.Context, *KnownNodes) (*KnownNodes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetKnownNodes not implemented")
+}
+func (UnimplementedNodeCommunicationServer) Close(context.Context, *PingRequest) (*PingRequest, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
 }
 func (UnimplementedNodeCommunicationServer) mustEmbedUnimplementedNodeCommunicationServer() {}
 
@@ -125,6 +140,24 @@ func _NodeCommunication_GetKnownNodes_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeCommunication_Close_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeCommunicationServer).Close(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeCommunication_Close_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeCommunicationServer).Close(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeCommunication_ServiceDesc is the grpc.ServiceDesc for NodeCommunication service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,6 +172,10 @@ var NodeCommunication_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetKnownNodes",
 			Handler:    _NodeCommunication_GetKnownNodes_Handler,
+		},
+		{
+			MethodName: "Close",
+			Handler:    _NodeCommunication_Close_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

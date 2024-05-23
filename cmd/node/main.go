@@ -1,25 +1,49 @@
 package main
 
 import (
-	"fmt"
-	cfg "team01/internal/config"
-	"team01/internal/node/bl"
-	"team01/internal/node/db"
-	"team01/internal/node/io/grpc"
+  "context"
+  "fmt"
+  "os"
+  "os/signal"
+  "syscall"
+  cfg "team01/internal/config"
+  "team01/internal/node/bl"
+  "team01/internal/node/db"
+  "team01/internal/node/io/grpc"
 )
 
 // TODO add gracefully shutdown
 func main() {
-	cfg.SetAppName("Node")
+  ctx, cancel := context.WithCancel(context.Background())
+  //ctx := context.Background()
+  interruptCh := make(chan os.Signal, 1)
+  signal.Notify(interruptCh, syscall.SIGINT, syscall.SIGTERM)
+  finished := make(chan bool, 1)
+  //defer close(finished)
+  //defer close(interruptCh)
 
-	dbRepo := db.NewDBRepo()
-	dbRepo.Vault.GetArtifact("w")
+  cfg.SetAppName("Node")
+  //
+  dbRepo := db.NewDBRepo()
+  dbRepo.Vault.GetArtifact("w")
+  //
+  blRepo := bl.NewBL(dbRepo)
+  srv := grpc.NewGrpcNode(blRepo, finished)
+  srv.Run(ctx)
+  fmt.Println("------")
+  go func() {
+    <-interruptCh
+    fmt.Println("Received interrupt signal. Cleaning up...")
 
-	blRepo := bl.NewBL(dbRepo)
-	finished := make(chan bool)
-	srv := grpc.NewGrpcNode(blRepo, finished)
-	srv.Run()
-	fmt.Println("------")
-	<-finished
+    //fmt.Println()
+    //fmt.Println(sig)
+    //cancel()
+    //close(finished)
+    //finished <- true
+    cancel()
+  }()
+  <-finished
+  //time.Sleep(time.Second * 5)
+  //fmt.Println("------")
 
 }

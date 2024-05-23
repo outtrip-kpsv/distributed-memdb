@@ -33,4 +33,5 @@ message Artefact {
 service NodeCommunication {
   rpc Ping(PingRequest) returns (PingResult);
   rpc GetKnownNodes(KnownNodes) returns (KnownNodes);
+  rpc Close(PingRequest) returns (PingRequest);
 }
