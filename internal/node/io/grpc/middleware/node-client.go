@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/connectivity"
 	cfg "team01/internal/config"
 	"team01/internal/proto/node"
-	"time"
 )
 
 //todo все гетноде переписать
@@ -34,21 +33,26 @@ func (m *middleware) ClientRequestInterceptor(
 	resultErr := invoker(ctx, method, req, reply, cc, opts...)
 	// после запроса
 	if resultErr == nil && method != "/NodeCommunication/GetKnownNodes" {
-		res := &node.KnownNodes{}
-		err := cc.Invoke(ctx, "/NodeCommunication/GetKnownNodes", m.bl.Node.GetKnowNode(), res, opts...)
+		ourNode := &node.KnownNodes{}
+		thisNode := m.bl.Node.GetKnowNode()
+		err := cc.Invoke(ctx, "/NodeCommunication/GetKnownNodes", thisNode, ourNode, opts...)
+
 		if err != nil {
 			cfg.GetLogger().Info("ERR", zap.Error(err))
 			return err
 		}
-		cfg.GetLogger().Info("GetNodes: ", zap.Reflect("nodes: ", res))
-		for k, v := range res.Nodes {
-			t := time.Now().Sub(v.Ts.AsTime()).String()
-			cfg.GetLogger().Info("==== node: ", zap.String("nodes: ", k), zap.String("tm", t))
-
-		}
+		//todo upd
+		newNode := m.bl.Node.UpdateKnowNode(ourNode)
+		//	TODO соединить с новыми нодами
+		cfg.GetLogger().Info("GetNodes: ", zap.Reflect("----------------------nodes: ", newNode))
+		//for k, v := range ourNode.Nodes {
+		//	t := time.Now().Sub(v.Ts.AsTime()).String()
+		//	cfg.GetLogger().Info("==== node: ", zap.String("nodes: ", k), zap.String("tm", t))
+		//
+		//}
 		//// todo найти самый стары запрос и обновить LastNode (+) ????? где это делать
 		//oldTime := time.Now()
-		//for k, v := range res.Nodes {
+		//for k, v := range ourNode.Nodes {
 		//	//TODO Address ->cfg
 		//	if k == cfg.GetAddress() {
 		//		continue

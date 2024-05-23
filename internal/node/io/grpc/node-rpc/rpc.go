@@ -8,13 +8,13 @@ import (
 
 type NodeRpc struct {
 	node.UnimplementedNodeCommunicationServer
-	Midleware m.IMiddleWare
-	BL        *bl.BL
+	MiddleWare m.IMiddleWare
+	BL         *bl.BL
 }
 
 func CreateNode(bl *bl.BL) *NodeRpc {
 	return &NodeRpc{
-		BL:        bl,
-		Midleware: m.NewMiddlewares(bl),
+		BL:         bl,
+		MiddleWare: m.NewMiddlewares(bl),
 	}
 }

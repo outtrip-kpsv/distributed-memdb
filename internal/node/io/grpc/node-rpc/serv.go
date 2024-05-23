@@ -19,17 +19,17 @@ func (n *NodeRpc) Ping(ctx context.Context, req *node.PingRequest) (*node.PingRe
 func (n *NodeRpc) GetKnownNodes(ctx context.Context, req *node.KnownNodes) (*node.KnownNodes, error) {
 	cfg.GetLogger().Info("method GetKnownNodes", zap.Reflect("nodes: ", req.Nodes))
 	// TODO унести в бизнес логику
-
-	//var newNode []string
-	//TODO context refactor
+	// TODO context refactor
 	ctxNew, _ := context.WithTimeout(ctx, 5*time.Second)
 
 	var wg sync.WaitGroup
+
 	ch := make(chan struct {
 		address string
 		conn    *grpc.ClientConn
 		err     error
 	})
+
 	for k, v := range req.Nodes {
 		if !n.BL.Node.NodeIsKnown(k) {
 			//newNode = append(newNode, k)
@@ -40,7 +40,7 @@ func (n *NodeRpc) GetKnownNodes(ctx context.Context, req *node.KnownNodes) (*nod
 			cfg.GetLogger().Info("sss")
 			go func(k string) {
 				defer wg.Done()
-				client, err := util.GetClient(ctxNew, k, n.Midleware.ClientRequestInterceptor)
+				client, err := util.GetClient(ctxNew, k, n.MiddleWare.ClientRequestInterceptor)
 				ch <- struct {
 					address string
 					conn    *grpc.ClientConn
@@ -52,9 +52,7 @@ func (n *NodeRpc) GetKnownNodes(ctx context.Context, req *node.KnownNodes) (*nod
 
 			n.BL.Node.UpdTimePingNode(k, v.Ts)
 			n.BL.Node.UpdLastNode()
-
 		}
-
 	}
 
 	go func() {

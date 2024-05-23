@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	cfg "team01/internal/config"
 	"team01/internal/node/bl/model"
@@ -15,12 +14,25 @@ type INodeBL interface {
 	GetKnowNode() *node.KnownNodes
 	AddNodeToKnown(address string, client node.NodeCommunicationClient)
 	NodeIsKnown(address string) bool
+	UpdateKnowNode(ourNodes *node.KnownNodes) []string
 	UpdTimePingNode(address string, ts *timestamppb.Timestamp)
 	UpdLastNode()
 }
 
 type nodeBl struct {
 	core *model.Unit
+}
+
+func (n *nodeBl) UpdateKnowNode(ourNodes *node.KnownNodes) []string {
+	var res []string
+	for k, v := range ourNodes.Nodes {
+		if n.NodeIsKnown(k) {
+			n.UpdTimePingNode(k, v.Ts)
+		} else {
+			res = append(res, k)
+		}
+	}
+	return res
 }
 
 func (n *nodeBl) AddNodeToKnown(address string, client node.NodeCommunicationClient) {
@@ -56,7 +68,6 @@ func (n *nodeBl) UpdTimePingNode(address string, ts *timestamppb.Timestamp) {
 	//	ts = timestamppb.Now()
 	//}
 
-	cfg.GetLogger().Info("ss", zap.Reflect("--- ", n.core))
 	stateTime := n.core.KnowNodes[address].Public.Ts.AsTime()
 	if stateTime.Before(ts.AsTime()) {
 		n.core.KnowNodes[address].Public.Ts = ts

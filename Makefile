@@ -10,7 +10,6 @@ clean:
 
 build: clean
 	go build -o ./build/ ./cmd/node
-	go build -o ./build/ ./cmd/test
 
 ex1:
 	./build/node --port 8301
