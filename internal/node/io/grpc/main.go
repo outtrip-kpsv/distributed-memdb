@@ -8,9 +8,7 @@ import (
 	cfg "team01/internal/config"
 	"team01/internal/node/bl"
 	"team01/internal/node/io/grpc/node-rpc"
-	"team01/internal/node/io/grpc/util"
 	"team01/internal/proto/node"
-	"time"
 )
 
 type serv struct {
@@ -58,51 +56,29 @@ func (s *serv) Run(ctx context.Context) {
 	// соединение с первой нодой, переданной при запуске
 	address, err := cfg.GetConnectAddress()
 	if err == nil {
-		err = s.ConnectTo(address)
+		err = s.nodeRpc.ConnectTo(ctx, address)
 	}
+	s.nodeRpc.BL.Node.UpdLastNode()
+
 	// горутина обработчик событий
 	go func() {
 		for {
 			select {
-			case <-s.nodeRpc.BL.Node.GetUnit().LastNode.Ticker.C:
+			case <-s.nodeRpc.BL.Node.TickerLastNode().C:
+
+				//ctxNew := context.WithValue(ctx, "from", cfg.GetAddress())
 				cfg.GetLogger().Info("ticker done for " + s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
-				pingReq, err := s.nodeRpc.BL.Node.GetUnit().KnowNodes[s.nodeRpc.BL.Node.GetUnit().LastNode.Address].Client.Ping(context.Background(), &node.PingRequest{})
 
+				pingReq, err := s.nodeRpc.BL.Node.GetLastClient().Ping(ctx, &node.PingRequest{})
 				if err != nil {
-					delete(s.nodeRpc.BL.Node.GetUnit().KnowNodes, s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
-
-					//s.nodeRpc.BL.Node.UpdLastNode()
-					//cfg.GetLogger().Info("error", zap.Error(err))
-					//delete(s.nodeRpc.BL.Node.GetUnit().KnowNodes, s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
-					//// todo обновить ласт ноду
-					//oldTime := time.Now()
-					//for k, v := range s.nodeRpc.BL.Node.GetUnit().KnowNodes {
-					//
-					//	cfg.GetLogger().Info("find time for last node check " + k)
-					//	if v.Public.Ts.AsTime().Before(oldTime) {
-					//		oldTime = v.Public.Ts.AsTime()
-					//		s.nodeRpc.BL.Node.GetUnit().LastNode.Address = k
-					//		cfg.GetLogger().Info("last node naw is " + k)
-					//	} else {
-					//		cfg.GetLogger().Info("ln old " + s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
-					//		//fmt.Println()
-					//	}
-					//}
-					//s.nodeRpc.BL.Node.GetUnit().LastNode.Ticker.Stop()
-					//tmp := time.Second*5 - (time.Now().Sub(oldTime))
-					//cfg.GetLogger().Info("-------- " + tmp.String())
-					////fmt.Println("t", tmp)
-					//if tmp <= 0 {
-					//	tmp = time.Millisecond
-					//}
-					//s.nodeRpc.BL.Node.GetUnit().LastNode.Ticker = time.NewTicker(tmp)
+					// todo perepisat na deleteLastNode
+					s.nodeRpc.BL.Node.DeleteNode(s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
 					continue
-				} else {
-
 				}
 
 				if pingReq.Res == false {
-					delete(s.nodeRpc.BL.Node.GetUnit().KnowNodes, s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
+					// todo perepisat na deleteLastNode
+					s.nodeRpc.BL.Node.DeleteNode(s.nodeRpc.BL.Node.GetUnit().LastNode.Address)
 				}
 
 			case <-ctx.Done():
@@ -110,17 +86,7 @@ func (s *serv) Run(ctx context.Context) {
 				s.serv.Stop()
 
 				return
-				//return
-			//return
-			//case <-s.finished:
-			//  fmt.Println("stop")
-			//  return
-
-			//return
 			default:
-				//s.inCh <- syscall.SIGINT
-				//return
-
 			}
 		}
 	}()
@@ -130,31 +96,20 @@ func (s *serv) Run(ctx context.Context) {
 //
 //}
 
-// TODO work1!! this!!!
-func (s *serv) ConnectTo(address string) error {
-	if cfg.GetAddress() == address {
-		return nil
-	}
-
-	if ok := s.nodeRpc.BL.Node.NodeIsKnown(address); !ok {
-		//TODO named logger, remove ctx background
-		conn, err := util.GetClient(context.Background(), address, s.nodeRpc.MiddleWare.ClientRequestInterceptor)
-		if err != nil {
-			return err
-		}
-		s.nodeRpc.BL.Node.AddNodeToKnown(address, node.NewNodeCommunicationClient(conn))
-		cfg.GetLogger().Info("OK", zap.String("Connect to", address))
-
-	} else {
-
-	}
-
-	if len(s.nodeRpc.BL.Node.GetUnit().KnowNodes) == 1 {
-		//todo getunit remove
-		s.nodeRpc.BL.Node.GetUnit().LastNode.Address = address
-		s.nodeRpc.BL.Node.GetUnit().LastNode.Ticker = time.NewTicker(time.Second * 5)
-		cfg.GetLogger().Info("last node cr")
-	}
-
-	return nil
-}
+//func (s *serv) ConnectTo(ctx context.Context, address string) error {
+//	if cfg.GetAddress() == address {
+//		return nil
+//	}
+//	ctxNew, _ := context.WithTimeout(ctx, 5*time.Second)
+//
+//	if ok := s.nodeRpc.BL.Node.NodeIsKnown(address); !ok {
+//		//TODO named logger, remove ctx background !!! <<<<<<<
+//		conn, err := util.GetClient(ctxNew, address, s.nodeRpc.MiddleWare.ClientRequestInterceptor)
+//		if err != nil {
+//			return err
+//		}
+//		s.nodeRpc.BL.Node.AddNodeToKnown(address, node.NewNodeCommunicationClient(conn))
+//		cfg.GetLogger().Info("OK", zap.String("Connect to", address))
+//	}
+//	return nil
+//}

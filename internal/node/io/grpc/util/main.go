@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -24,7 +25,6 @@ func GetClient(
 		...grpc.CallOption) error) (*grpc.ClientConn, error) {
 
 	ticker := time.NewTicker(time.Millisecond)
-	//timeout := time.After(5 * time.Second)
 
 	defer ticker.Stop()
 
@@ -35,6 +35,7 @@ func GetClient(
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(interceptor),
 	)
+	fmt.Println(ctx)
 
 	for {
 		select {
@@ -46,6 +47,7 @@ func GetClient(
 				nSeconds *= 2
 				continue
 			}
+			cfg.GetLogger().Info("CONNECT", zap.String("address: ", srv))
 			return conn, nil
 		case <-ctx.Done():
 			return nil, ctx.Err()
