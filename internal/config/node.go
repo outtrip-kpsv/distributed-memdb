@@ -61,3 +61,7 @@ func GetConnectAddress() (string, error) {
 	}
 	return fmt.Sprintf("%s:%s", globalConf.Options.ConnectHost, globalConf.Options.ConnectPort), nil
 }
+
+func GetRepl() int {
+	return globalConf.Options.Repl
+}

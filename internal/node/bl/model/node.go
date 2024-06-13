@@ -7,9 +7,12 @@ import (
 )
 
 type Unit struct {
-	KnowNodes map[string]*State
-	Vault     mem.IVault
-	LastNode  NodeLastInfo
+	KnowNodes   map[string]*State
+	ClusterSize int
+	Status      node.NodeStatus
+
+	Vault    mem.IVault
+	LastNode NodeLastInfo
 }
 
 type State struct {

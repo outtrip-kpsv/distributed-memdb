@@ -19,9 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	NodeCommunication_Ping_FullMethodName          = "/NodeCommunication/Ping"
-	NodeCommunication_GetKnownNodes_FullMethodName = "/NodeCommunication/GetKnownNodes"
-	NodeCommunication_Close_FullMethodName         = "/NodeCommunication/Close"
+	NodeCommunication_Ping_FullMethodName         = "/NodeCommunication/Ping"
+	NodeCommunication_GetInfo_FullMethodName      = "/NodeCommunication/GetInfo"
+	NodeCommunication_RequestP2P_FullMethodName   = "/NodeCommunication/RequestP2P"
+	NodeCommunication_Get_FullMethodName          = "/NodeCommunication/Get"
+	NodeCommunication_Set_FullMethodName          = "/NodeCommunication/Set"
+	NodeCommunication_Delete_FullMethodName       = "/NodeCommunication/Delete"
+	NodeCommunication_Repl_FullMethodName         = "/NodeCommunication/Repl"
+	NodeCommunication_ProxyRequest_FullMethodName = "/NodeCommunication/ProxyRequest"
 )
 
 // NodeCommunicationClient is the client API for NodeCommunication service.
@@ -29,8 +34,13 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NodeCommunicationClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResult, error)
-	GetKnownNodes(ctx context.Context, in *KnownNodes, opts ...grpc.CallOption) (*KnownNodes, error)
-	Close(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingRequest, error)
+	GetInfo(ctx context.Context, in *Info, opts ...grpc.CallOption) (*Info, error)
+	RequestP2P(ctx context.Context, in *CliReq, opts ...grpc.CallOption) (*NodeResp, error)
+	Get(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ArtResp, error)
+	Set(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ArtResp, error)
+	Delete(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ArtResp, error)
+	Repl(ctx context.Context, in *Artefact, opts ...grpc.CallOption) (*PingResult, error)
+	ProxyRequest(ctx context.Context, in *CliReq, opts ...grpc.CallOption) (*NodeResp, error)
 }
 
 type nodeCommunicationClient struct {
@@ -50,18 +60,63 @@ func (c *nodeCommunicationClient) Ping(ctx context.Context, in *PingRequest, opt
 	return out, nil
 }
 
-func (c *nodeCommunicationClient) GetKnownNodes(ctx context.Context, in *KnownNodes, opts ...grpc.CallOption) (*KnownNodes, error) {
-	out := new(KnownNodes)
-	err := c.cc.Invoke(ctx, NodeCommunication_GetKnownNodes_FullMethodName, in, out, opts...)
+func (c *nodeCommunicationClient) GetInfo(ctx context.Context, in *Info, opts ...grpc.CallOption) (*Info, error) {
+	out := new(Info)
+	err := c.cc.Invoke(ctx, NodeCommunication_GetInfo_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeCommunicationClient) Close(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingRequest, error) {
-	out := new(PingRequest)
-	err := c.cc.Invoke(ctx, NodeCommunication_Close_FullMethodName, in, out, opts...)
+func (c *nodeCommunicationClient) RequestP2P(ctx context.Context, in *CliReq, opts ...grpc.CallOption) (*NodeResp, error) {
+	out := new(NodeResp)
+	err := c.cc.Invoke(ctx, NodeCommunication_RequestP2P_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeCommunicationClient) Get(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ArtResp, error) {
+	out := new(ArtResp)
+	err := c.cc.Invoke(ctx, NodeCommunication_Get_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeCommunicationClient) Set(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ArtResp, error) {
+	out := new(ArtResp)
+	err := c.cc.Invoke(ctx, NodeCommunication_Set_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeCommunicationClient) Delete(ctx context.Context, in *Request, opts ...grpc.CallOption) (*ArtResp, error) {
+	out := new(ArtResp)
+	err := c.cc.Invoke(ctx, NodeCommunication_Delete_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeCommunicationClient) Repl(ctx context.Context, in *Artefact, opts ...grpc.CallOption) (*PingResult, error) {
+	out := new(PingResult)
+	err := c.cc.Invoke(ctx, NodeCommunication_Repl_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeCommunicationClient) ProxyRequest(ctx context.Context, in *CliReq, opts ...grpc.CallOption) (*NodeResp, error) {
+	out := new(NodeResp)
+	err := c.cc.Invoke(ctx, NodeCommunication_ProxyRequest_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +128,13 @@ func (c *nodeCommunicationClient) Close(ctx context.Context, in *PingRequest, op
 // for forward compatibility
 type NodeCommunicationServer interface {
 	Ping(context.Context, *PingRequest) (*PingResult, error)
-	GetKnownNodes(context.Context, *KnownNodes) (*KnownNodes, error)
-	Close(context.Context, *PingRequest) (*PingRequest, error)
+	GetInfo(context.Context, *Info) (*Info, error)
+	RequestP2P(context.Context, *CliReq) (*NodeResp, error)
+	Get(context.Context, *Request) (*ArtResp, error)
+	Set(context.Context, *Request) (*ArtResp, error)
+	Delete(context.Context, *Request) (*ArtResp, error)
+	Repl(context.Context, *Artefact) (*PingResult, error)
+	ProxyRequest(context.Context, *CliReq) (*NodeResp, error)
 	mustEmbedUnimplementedNodeCommunicationServer()
 }
 
@@ -85,11 +145,26 @@ type UnimplementedNodeCommunicationServer struct {
 func (UnimplementedNodeCommunicationServer) Ping(context.Context, *PingRequest) (*PingResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedNodeCommunicationServer) GetKnownNodes(context.Context, *KnownNodes) (*KnownNodes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetKnownNodes not implemented")
+func (UnimplementedNodeCommunicationServer) GetInfo(context.Context, *Info) (*Info, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInfo not implemented")
 }
-func (UnimplementedNodeCommunicationServer) Close(context.Context, *PingRequest) (*PingRequest, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Close not implemented")
+func (UnimplementedNodeCommunicationServer) RequestP2P(context.Context, *CliReq) (*NodeResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestP2P not implemented")
+}
+func (UnimplementedNodeCommunicationServer) Get(context.Context, *Request) (*ArtResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedNodeCommunicationServer) Set(context.Context, *Request) (*ArtResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Set not implemented")
+}
+func (UnimplementedNodeCommunicationServer) Delete(context.Context, *Request) (*ArtResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedNodeCommunicationServer) Repl(context.Context, *Artefact) (*PingResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Repl not implemented")
+}
+func (UnimplementedNodeCommunicationServer) ProxyRequest(context.Context, *CliReq) (*NodeResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProxyRequest not implemented")
 }
 func (UnimplementedNodeCommunicationServer) mustEmbedUnimplementedNodeCommunicationServer() {}
 
@@ -122,38 +197,128 @@ func _NodeCommunication_Ping_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NodeCommunication_GetKnownNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(KnownNodes)
+func _NodeCommunication_GetInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Info)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeCommunicationServer).GetKnownNodes(ctx, in)
+		return srv.(NodeCommunicationServer).GetInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: NodeCommunication_GetKnownNodes_FullMethodName,
+		FullMethod: NodeCommunication_GetInfo_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeCommunicationServer).GetKnownNodes(ctx, req.(*KnownNodes))
+		return srv.(NodeCommunicationServer).GetInfo(ctx, req.(*Info))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NodeCommunication_Close_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
+func _NodeCommunication_RequestP2P_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CliReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeCommunicationServer).Close(ctx, in)
+		return srv.(NodeCommunicationServer).RequestP2P(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: NodeCommunication_Close_FullMethodName,
+		FullMethod: NodeCommunication_RequestP2P_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeCommunicationServer).Close(ctx, req.(*PingRequest))
+		return srv.(NodeCommunicationServer).RequestP2P(ctx, req.(*CliReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeCommunication_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeCommunicationServer).Get(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeCommunication_Get_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeCommunicationServer).Get(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeCommunication_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeCommunicationServer).Set(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeCommunication_Set_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeCommunicationServer).Set(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeCommunication_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeCommunicationServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeCommunication_Delete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeCommunicationServer).Delete(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeCommunication_Repl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Artefact)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeCommunicationServer).Repl(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeCommunication_Repl_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeCommunicationServer).Repl(ctx, req.(*Artefact))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeCommunication_ProxyRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CliReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeCommunicationServer).ProxyRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeCommunication_ProxyRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeCommunicationServer).ProxyRequest(ctx, req.(*CliReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -170,12 +335,159 @@ var NodeCommunication_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _NodeCommunication_Ping_Handler,
 		},
 		{
-			MethodName: "GetKnownNodes",
-			Handler:    _NodeCommunication_GetKnownNodes_Handler,
+			MethodName: "GetInfo",
+			Handler:    _NodeCommunication_GetInfo_Handler,
 		},
 		{
-			MethodName: "Close",
-			Handler:    _NodeCommunication_Close_Handler,
+			MethodName: "RequestP2P",
+			Handler:    _NodeCommunication_RequestP2P_Handler,
+		},
+		{
+			MethodName: "Get",
+			Handler:    _NodeCommunication_Get_Handler,
+		},
+		{
+			MethodName: "Set",
+			Handler:    _NodeCommunication_Set_Handler,
+		},
+		{
+			MethodName: "Delete",
+			Handler:    _NodeCommunication_Delete_Handler,
+		},
+		{
+			MethodName: "Repl",
+			Handler:    _NodeCommunication_Repl_Handler,
+		},
+		{
+			MethodName: "ProxyRequest",
+			Handler:    _NodeCommunication_ProxyRequest_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "node.proto",
+}
+
+const (
+	ClientCommunication_GetInfoNode_FullMethodName = "/ClientCommunication/GetInfoNode"
+	ClientCommunication_Request_FullMethodName     = "/ClientCommunication/Request"
+)
+
+// ClientCommunicationClient is the client API for ClientCommunication service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ClientCommunicationClient interface {
+	GetInfoNode(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*Info, error)
+	Request(ctx context.Context, in *CliReq, opts ...grpc.CallOption) (*NodeResp, error)
+}
+
+type clientCommunicationClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewClientCommunicationClient(cc grpc.ClientConnInterface) ClientCommunicationClient {
+	return &clientCommunicationClient{cc}
+}
+
+func (c *clientCommunicationClient) GetInfoNode(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*Info, error) {
+	out := new(Info)
+	err := c.cc.Invoke(ctx, ClientCommunication_GetInfoNode_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clientCommunicationClient) Request(ctx context.Context, in *CliReq, opts ...grpc.CallOption) (*NodeResp, error) {
+	out := new(NodeResp)
+	err := c.cc.Invoke(ctx, ClientCommunication_Request_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ClientCommunicationServer is the server API for ClientCommunication service.
+// All implementations must embed UnimplementedClientCommunicationServer
+// for forward compatibility
+type ClientCommunicationServer interface {
+	GetInfoNode(context.Context, *PingRequest) (*Info, error)
+	Request(context.Context, *CliReq) (*NodeResp, error)
+	mustEmbedUnimplementedClientCommunicationServer()
+}
+
+// UnimplementedClientCommunicationServer must be embedded to have forward compatible implementations.
+type UnimplementedClientCommunicationServer struct {
+}
+
+func (UnimplementedClientCommunicationServer) GetInfoNode(context.Context, *PingRequest) (*Info, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInfoNode not implemented")
+}
+func (UnimplementedClientCommunicationServer) Request(context.Context, *CliReq) (*NodeResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Request not implemented")
+}
+func (UnimplementedClientCommunicationServer) mustEmbedUnimplementedClientCommunicationServer() {}
+
+// UnsafeClientCommunicationServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ClientCommunicationServer will
+// result in compilation errors.
+type UnsafeClientCommunicationServer interface {
+	mustEmbedUnimplementedClientCommunicationServer()
+}
+
+func RegisterClientCommunicationServer(s grpc.ServiceRegistrar, srv ClientCommunicationServer) {
+	s.RegisterService(&ClientCommunication_ServiceDesc, srv)
+}
+
+func _ClientCommunication_GetInfoNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClientCommunicationServer).GetInfoNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClientCommunication_GetInfoNode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClientCommunicationServer).GetInfoNode(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClientCommunication_Request_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CliReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClientCommunicationServer).Request(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClientCommunication_Request_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClientCommunicationServer).Request(ctx, req.(*CliReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ClientCommunication_ServiceDesc is the grpc.ServiceDesc for ClientCommunication service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ClientCommunication_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "ClientCommunication",
+	HandlerType: (*ClientCommunicationServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetInfoNode",
+			Handler:    _ClientCommunication_GetInfoNode_Handler,
+		},
+		{
+			MethodName: "Request",
+			Handler:    _ClientCommunication_Request_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

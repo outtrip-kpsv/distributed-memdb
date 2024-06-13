@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"fmt"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	cfg "team01/internal/config"
 	"team01/internal/node/bl/model"
@@ -12,7 +11,8 @@ import (
 
 type INodeBL interface {
 	GetUnit() *model.Unit //TODO remove
-	GetKnowNode() *node.KnownNodes
+	GetInfo() *node.Info
+	GetSizeCluster() int
 	AddNodeToKnown(address string, client node.NodeCommunicationClient)
 	NodeIsKnown(address string) bool
 	UpdateKnowNode(ourNodes *node.KnownNodes) []string
@@ -22,22 +22,38 @@ type INodeBL interface {
 
 	TickerLastNode() *time.Ticker
 	GetLastClient() node.NodeCommunicationClient
-	ConnectToNodes(addresses []string)
 }
 
 type nodeBl struct {
 	core *model.Unit
 }
 
-func (n *nodeBl) DeleteNode(address string) {
-	delete(n.core.KnowNodes, address)
-	n.UpdLastNode()
+func NewNodeBL(dbRepo *db.DBRepo) INodeBL {
+	return &nodeBl{core: newNode(dbRepo)}
 }
 
-func (n *nodeBl) ConnectToNodes(addresses []string) {
-	for _, address := range addresses {
-		fmt.Println(address)
+func (n *nodeBl) GetInfo() *node.Info {
+	return &node.Info{
+		Address:   cfg.GetAddress(),
+		Repl:      int32(cfg.GetRepl()),
+		SizeVault: int32(n.core.Vault.GetSize()),
+		Status:    n.core.Status,
+		Env:       createReqKnownNodes(n.core.KnowNodes),
 	}
+}
+
+func (n *nodeBl) GetSizeCluster() int {
+	return n.core.ClusterSize
+}
+
+func (n *nodeBl) DeleteNode(address string) {
+	cfg.GetLogger().Info("DEL " + address)
+
+	delete(n.core.KnowNodes, address)
+	n.core.ClusterSize--
+	n.UpdLastNode()
+	n.updStatus()
+
 }
 
 // GetUnit TODO remove
@@ -46,6 +62,14 @@ func (n *nodeBl) GetUnit() *model.Unit {
 }
 
 func (n *nodeBl) GetLastClient() node.NodeCommunicationClient {
+	//TODO ---
+	/*
+		panic: runtime error: invalid memory address or nil pointer dereference
+		[signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x2dec30b]
+
+		goroutine 37 [running]:
+		team01/internal/node/bl/repo.(*nodeBl).GetLastClient(0xc0001f9ee8?)
+	*/
 	return n.core.KnowNodes[n.core.LastNode.Address].Client
 }
 
@@ -55,9 +79,14 @@ func (n *nodeBl) TickerLastNode() *time.Ticker {
 
 func (n *nodeBl) AddNodeToKnown(address string, client node.NodeCommunicationClient) {
 	n.core.KnowNodes[address] = &model.State{
-		Public: node.DataNode{Ts: timestamppb.Now()},
+		Public: node.DataNode{
+			Ts: timestamppb.New(time.Now().Add(-time.Second * 5)),
+		},
 		Client: client,
 	}
+	n.core.ClusterSize++
+
+	n.updStatus()
 }
 
 func (n *nodeBl) NodeIsKnown(address string) bool {
@@ -67,20 +96,18 @@ func (n *nodeBl) NodeIsKnown(address string) bool {
 	return true
 }
 
-func (n *nodeBl) GetKnowNode() *node.KnownNodes {
-	return createReqKnownNodes(n.core.KnowNodes)
-}
-
 func (n *nodeBl) UpdateKnowNode(ourNodes *node.KnownNodes) []string {
 	var res []string
 	for k, v := range ourNodes.Nodes {
+		if k == cfg.GetAddress() {
+			continue
+		}
 		if n.NodeIsKnown(k) {
 			n.UpdTimePingNode(k, v.Ts)
 		} else {
 			res = append(res, k)
 		}
 	}
-	n.UpdLastNode()
 	return res
 }
 
@@ -88,22 +115,19 @@ func (n *nodeBl) UpdTimePingNode(address string, ts *timestamppb.Timestamp) {
 	stateTime := n.core.KnowNodes[address].Public.Ts.AsTime()
 	if stateTime.Before(ts.AsTime()) {
 		n.core.KnowNodes[address].Public.Ts = ts
+		n.UpdLastNode()
 	}
 }
 
 func (n *nodeBl) UpdLastNode() {
+
 	switch len(n.core.KnowNodes) {
 	case 0:
+		n.TickerLastNode().Stop()
 		return
-	case 1:
-		for k := range n.core.KnowNodes {
-			n.core.LastNode.Address = k
-		}
-		n.core.LastNode.Ticker = time.NewTicker(time.Second * 5)
 	default:
 		oldTime := time.Now()
 		for k, v := range n.core.KnowNodes {
-			cfg.GetLogger().Info("find time for last node check " + k)
 			if v.Public.Ts.AsTime().Before(oldTime) {
 				oldTime = v.Public.Ts.AsTime()
 				n.core.LastNode.Address = k
@@ -116,11 +140,6 @@ func (n *nodeBl) UpdLastNode() {
 		}
 		n.core.LastNode.Ticker = time.NewTicker(tmp)
 	}
-	cfg.GetLogger().Info("Upd last node")
-}
-
-func NewNodeBL(dbRepo *db.DBRepo) INodeBL {
-	return &nodeBl{core: newNode(dbRepo)}
 }
 
 func newNode(dbRepo *db.DBRepo) *model.Unit {
@@ -131,8 +150,18 @@ func newNode(dbRepo *db.DBRepo) *model.Unit {
 			Address: "",
 			Ticker:  &time.Ticker{},
 		},
+		ClusterSize: 1,
 	}
 	return &res
+}
+
+// TODO добавить логики
+func (n *nodeBl) updStatus() {
+	if cfg.GetRepl() <= n.core.ClusterSize {
+		n.core.Status = node.NodeStatus_LISTENER
+	} else {
+		n.core.Status = node.NodeStatus_UNKNOWN
+	}
 }
 
 // createReqKnownNodes Функция для формирования knownNodes
@@ -141,7 +170,7 @@ func createReqKnownNodes(nodes map[string]*model.State) *node.KnownNodes {
 	for k, v := range nodes {
 		knownNodesMap[k] = &node.DataNode{Ts: v.Public.Ts}
 	}
-	// добавление скоего адресса в мапу
+	// добавление своего адреса в мапу
 	knownNodesMap[cfg.GetAddress()] = &node.DataNode{
 		Ts: timestamppb.Now(),
 	}

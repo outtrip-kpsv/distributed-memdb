@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 	cfg "team01/internal/config"
 	"team01/internal/node/bl"
 	"team01/internal/node/db"
-	"team01/internal/node/io/grpc"
+	"team01/internal/node/io/grpc_node"
 )
 
 func main() {
@@ -19,15 +18,15 @@ func main() {
 	finished := make(chan bool, 1)
 
 	cfg.SetAppName("Node")
-	//
+
 	dbRepo := db.NewDBRepo()
 	blRepo := bl.NewBL(dbRepo)
-	srv := grpc.NewGrpcNode(blRepo, finished)
+	srv := grpc_node.NewGrpcNode(blRepo, finished)
 	srv.Run(ctx)
 
 	go func() {
 		<-interruptCh
-		fmt.Println("Received interrupt signal. Cleaning up...")
+		cfg.GetLogger().Info("Received interrupt signal. Cleaning up...")
 		cancel()
 	}()
 	<-finished

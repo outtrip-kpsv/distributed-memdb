@@ -10,6 +10,21 @@ option go_package = "internal/proto/node";
 //    }
 ////  }
 ////}
+enum NodeStatus {
+  UNKNOWN = 0;
+  CLIENT = 1;
+  LISTENER = 2;
+  LEADER = 3;
+  FOLLOWER = 4;
+  CANDIDATE = 5;
+}
+
+enum RespStatus {
+  OK = 0;
+  NO = 1;
+  ERROR = 2;
+
+}
 
 message DataNode {
   google.protobuf.Timestamp ts = 1;
@@ -26,12 +41,61 @@ message PingResult{
   bool res = 1;
 }
 
-message Artefact {
-      string name = 1;
+message ArtResp {
+  Artefact art = 1;
+  RespStatus res = 2;
 }
+
+message Artefact {
+  string name = 1;
+  string hashCluster = 2;
+}
+
+message CliReq {
+  request req = 1;
+  repeated string addresses = 2;
+}
+
+message NodeResp {
+  string value = 1;
+  uint64 code = 2;
+  uint64 countResult = 3;
+  map<string, RespStatus> result = 4;
+  string hashCluster = 5;
+}
+
+message Info {
+  string address = 1;
+  int32 repl = 2;
+  int32 sizeVault = 3;
+  NodeStatus status = 4;
+  KnownNodes env = 5;
+}
+
+message request {
+  string comm = 1;
+  string uuid = 2;
+  string value = 3;
+  string hashCluster = 4;
+
+}
+
 
 service NodeCommunication {
   rpc Ping(PingRequest) returns (PingResult);
-  rpc GetKnownNodes(KnownNodes) returns (KnownNodes);
-  rpc Close(PingRequest) returns (PingRequest);
+  rpc GetInfo(Info) returns (Info);
+  rpc RequestP2P(CliReq) returns (NodeResp);
+
+  rpc Get(request) returns (ArtResp);
+  rpc Set(request) returns (ArtResp);
+  rpc Delete(request) returns (ArtResp);
+
+  rpc Repl(Artefact) returns (PingResult);
+  rpc ProxyRequest(CliReq) returns (NodeResp);
+  //  rpc Close(PingRequest) returns (PingRequest);
+}
+
+service ClientCommunication {
+  rpc GetInfoNode(PingRequest) returns (Info);
+  rpc Request(CliReq) returns (NodeResp);
 }

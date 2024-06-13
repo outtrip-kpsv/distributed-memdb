@@ -26,9 +26,10 @@ type IMiddleWare interface {
 }
 
 type middleware struct {
-	bl *bl.BL
+	bl       *bl.BL
+	needConn chan string
 }
 
-func NewMiddlewares(bl *bl.BL) IMiddleWare {
-	return &middleware{bl: bl}
+func NewMiddlewares(bl *bl.BL, needConnect chan string) IMiddleWare {
+	return &middleware{bl: bl, needConn: needConnect}
 }
